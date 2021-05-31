@@ -1,0 +1,40 @@
+name: cloudrun-deploy-production
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build:
+    name: 'Cloud Run Production Deployment'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@master
+
+      - name: 'Setup GCP Service Account'
+        uses: google-github-actions/setup-gcloud@master
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_SECRET }}
+          export_default_credentials: true
+
+      - name: 'Configure Docker'
+        run: make gcloud-docker-init
+
+      - name: 'Build'
+        env:
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          ENVIRONMENT: 'production'
+        run: make gcloud-docker-build
+      
+      - name: 'Push'
+        env:
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          ENVIRONMENT: 'production'
+        run: make gcloud-docker-push
+
+      - name: 'Deploy'
+        env:
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          ENVIRONMENT: 'production'
+        run: make gcloud-run-deploy
